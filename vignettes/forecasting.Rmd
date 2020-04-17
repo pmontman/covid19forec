@@ -1,0 +1,152 @@
+---
+title: "forecasting"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{forecasting}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(covid19forec)
+library(dplyr)
+library(tidyr)
+library(readr)
+library(lubridate)
+library(downloader)
+```
+
+
+
+Load the data from the webs and add some benchmark forecasts on a temporal holdout
+```{r eval=TRUE, message=FALSE}
+covid_global = acquire_covid_data()
+
+
+cases_list = curated_cases_list(covid_global)
+cases_list = prepare_forecasts(cases_list, horiz = 5)
+```
+
+Try the global models, train on all the data but do model selection based only
+on the series that will actually be forecasted.
+
+```{r eval=TRUE, message=TRUE}
+do_MASE = FALSE
+do_log = TRUE
+do_maxnorm = FALSE
+
+
+res = analyze_glob_model(cases_list, linear_model,  MASE_norm = do_MASE,
+                         ret_series = TRUE, do_log_transform = do_log,
+                         do_max_scale = do_maxnorm)
+res
+
+
+focus_series = attr(res, "forec_series")
+focus_series = Filter(function (ll) grepl("Australia", ll$id),
+                                        focus_series)
+
+res = calc_error_summary(focus_series)
+
+#normalize the errors by the best 10 average to get a 
+rel_smape = as.numeric(res[2,])
+rel_smape = rel_smape / mean(sort(rel_smape)[1:10])
+rel_abs =  as.numeric(res[3,])
+rel_abs = rel_abs / mean(sort(rel_abs)[1:10])
+rel_mase =  as.numeric(res[1,])
+rel_mase = rel_mase / mean(sort(rel_mase)[1:10])
+
+rel_errors = round(rel_mase + rel_smape + rel_abs,2)
+rel_errors
+
+which.min(rel_errors)
+best_method = which.min(rel_mase + rel_smape + rel_abs)
+
+message(paste("Best found method:",  names(res)[best_method]))
+
+
+
+```
+
+
+
+
+Create the forecasts, train on the full dataset but focus on the 
+
+```{r eval=TRUE}
+
+best_method = best_method -4 #remove the benchmark methods from the count
+
+horiz = 28
+cases_toff = lapply(cases_list, function(ll) {
+  ll$x = ts(c(ll$x, ll$xx))
+  ll$xx = ts(rep(0, horiz))
+  ll$ff = NULL
+  ll
+})
+
+
+
+res = analyze_glob_model(cases_toff, linear_model, MASE_norm = do_MASE,
+                         ret_series = TRUE, do_log_transform = do_log,
+                         lag_range = 1:best_method,
+                         do_max_scale = do_maxnorm)
+
+
+focus_series = attr(res, "forec_series")
+focus_series = Filter(function (ll) grepl("Australia", ll$id),
+                                        focus_series)
+
+
+
+#example plot
+rs =  sample(1:length(focus_series),1)
+plot( (c(focus_series[[rs]]$x, focus_series[[rs]]$ff[best_method,])),type="b", col="red", lwd=2,
+      main = paste("cases in ", focus_series[[rs]]$id),
+      ylab = " patients", xlab="Days since 02 February")
+lines( (c(focus_series[[rs]]$x, focus_series[[rs]]$xx)),type="b", lwd=3)
+diff(focus_series[[rs]]$x)
+diff(focus_series[[rs]]$ff[best_method,])
+
+days_forec = lubridate::as_date("2020-04-16")
+days_forec = days_forec+(1:horiz -1)
+
+#remove decreasing forecasts for total cases
+forecs = sapply(focus_series, function(ll) {
+  ff = ll$ff[best_method,]
+  for (i in 2:length(ff)) {
+    ff[i] = max(ff[i], ff[i-1])
+  }
+  round(ff,2)}
+  )
+
+regions = sapply(focus_series, function(ll) {
+  words = unlist(strsplit(ll$id, " ")[[1]])
+  words = head(words,-1)
+  paste(words, collapse=" ")
+}
+)
+
+colnames(forecs) <- regions
+rownames(forecs) <- as.character(days_forec)
+
+forecs = as_tibble(forecs)
+forecs = cbind(days_forec, forecs)
+statistic="mean"
+forecs = cbind(statistic, forecs)
+
+forecs = forecs %>% pivot_longer(cols = 3:ncol(forecs), names_to="region", values_to="value")
+
+forecs = forecs %>% rename(state="region", date = "days_forec",  confirmed="value")
+forecs = forecs %>% select(state, statistic, date, confirmed)
+
+
+write_csv(forecs, paste("covid_aust_monash-pmm_", today(), ".csv", sep=""))
+```
