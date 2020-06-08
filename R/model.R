@@ -182,7 +182,8 @@ add_model_forecasts = function(model, series_list, name) {
 
 analyze_glob_model = function(my_series, fit_model_fun, model_name="custom_AR", MASE_norm=TRUE, lag_range=NULL, do_weights = FALSE,
                               ret_series=FALSE, do_log_transform = FALSE,
-                              do_max_scale=FALSE) {
+                              do_max_scale=FALSE,
+                              do_inversion=FALSE) {
   message(paste("applying MASE normalization:", MASE_norm))
   message(paste("applying sample weighting:", do_weights))
   series_list = my_series
@@ -196,6 +197,17 @@ analyze_glob_model = function(my_series, fit_model_fun, model_name="custom_AR", 
     })
   }
 
+
+  if (do_inversion) {
+    series_list = lapply(series_list, function(ll) {
+      ll$x = 1 / ll$x
+      ll$xx = 1/ ll$xx
+      ll$ff = 1 / ll$ff
+      ll
+    })
+  }
+
+
   if (do_max_scale) {
     series_list = lapply(series_list, function(ll) {
       maxsc = max(ll$x)
@@ -206,7 +218,6 @@ analyze_glob_model = function(my_series, fit_model_fun, model_name="custom_AR", 
       ll
     })
   }
-
 
   series_list = add_mase_scal(series_list)
   if (MASE_norm) {
@@ -276,6 +287,29 @@ analyze_glob_model = function(my_series, fit_model_fun, model_name="custom_AR", 
     series_list = mase_denormalize(series_list)
   }
 
+  if (do_max_scale) {
+    series_list = lapply(series_list, function(ll) {
+      maxsc = ll$maxsc
+      ll$x = ll$x * maxsc
+      ll$xx = ll$xx * maxsc
+      ll$ff = ll$ff * maxsc
+      ll
+    })
+    series_list = add_mase_scal(series_list)
+  }
+
+  if (do_inversion) {
+    series_list = lapply(series_list, function(ll) {
+      ll$x = 1 / ll$x
+      ll$xx = 1/ ll$xx
+      ll$ff = 1 / ll$ff
+      ll
+    })
+    series_list = add_mase_scal(series_list)
+  }
+
+
+
 
   if (do_log_transform) {
     series_list = lapply(series_list, function(ll) {
@@ -287,16 +321,7 @@ analyze_glob_model = function(my_series, fit_model_fun, model_name="custom_AR", 
     series_list = add_mase_scal(series_list)
   }
 
-  if (do_max_scale) {
-    series_list = lapply(series_list, function(ll) {
-      maxsc = ll$maxsc
-      ll$x = ll$x * maxsc
-      ll$xx = ll$xx * maxsc
-      ll$ff = ll$ff * maxsc
-      ll
-    })
-    series_list = add_mase_scal(series_list)
-  }
+
 
 
   err_results = calc_error_summary(series_list)

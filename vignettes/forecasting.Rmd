@@ -1,10 +1,8 @@
 ---
 title: "Covid19 Forecasting with Global Linear Models"
-output: rmarkdown::html_vignette
-vignette: >
-  %\VignetteIndexEntry{forecasting}
-  %\VignetteEngine{knitr::rmarkdown}
-  %\VignetteEncoding{UTF-8}
+author: Pablo Montero-Manso
+output:
+  github_document
 ---
 
 ```{r, include = FALSE}
@@ -25,7 +23,7 @@ library(downloader)
 
 
 
-Load the data from the webs and add some benchmark forecasts on a temporal holdout
+Load the data from the web, as it was in 21 April 2020 and add some benchmark forecasts on a temporal holdout.
 ```{r eval=TRUE, message=FALSE, warning=FALSE}
 data("covid_global")
 
