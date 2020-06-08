@@ -1,11 +1,14 @@
-# covid19forec
 
-covid19 forecasting
 
 
 Covid19 Forecasting with Global Linear Models
 ================
-Pablo Montero-Manso
+Pablo Montero-Manso, Rob J. Hyndman
+
+Project for reproducing forecasts on the covid data daily cases using global linear models.
+This projects takes the form of an R package but the important part is the code and data.
+
+Please clone the repo, this is an example of how to get to the forecasts:
 
 ``` r
 library(covid19forec)
