@@ -7,8 +7,8 @@
 #   }
 #   tail(as.vector(pred), h)
 # }
-# 
-# 
+#
+#
 # #calculates the forecasts to the entry $ff to the list of time series, optional name
 # slow_add_model_forecasts = function(model, series_list, name) {
 #   stopifnot(!is.null(model$lag))
@@ -49,21 +49,21 @@ abs_var_penal_loss = function(y_true, y_pred) {
   mu_err = k_mean(err)
   sd_err = k_sqrt(k_mean(k_square(err - mu_err)))
   kurt_err = k_pow( k_mean(k_pow(err - mu_err, 4)) , 0.15)
-  mu_err +0.01* sd_err #- 0.8*kurt_err##+ 1*k_max(err)# 
+  mu_err +0.01* sd_err #- 0.8*kurt_err##+ 1*k_max(err)#
 }
 
 
 #Deep Network AR Model an 5-layer ReLu MLP
 deepnet_ar_model <- function(X_train, y_train, X_val, y_val, epochs=350, batch=1, patience=ceiling(epochs/10),
                              weights=NULL) {
-  
+
   X_train <- array_reshape(X_train, dim = c(nrow(X_train), ncol(X_train)) )
   y_train <- array(y_train, dim = c(nrow(y_train), ncol(y_train)) )
-  
 
 
 
-  
+
+
   ind_cv = sample(nrow(X_train), floor(nrow(X_train)*0.15))
   X_val = X_train[ind_cv, ,drop=FALSE]
   y_val = y_train[ind_cv]
@@ -72,7 +72,7 @@ deepnet_ar_model <- function(X_train, y_train, X_val, y_val, epochs=350, batch=1
   if (!is.null(weights)) {
     weights = weights[-ind_cv]
   }
-  
+
   if (!is.null(weights)) {
     weights = array(weights, dim = length(weights) )
   }
@@ -84,15 +84,15 @@ deepnet_ar_model <- function(X_train, y_train, X_val, y_val, epochs=350, batch=1
   # X_train = X_train[-ind_cv,]
   # y_train = y_train[-ind_cv]
 
-  
+
   sampind = sample(nrow(X_train))
   X_train = X_train[sampind, ,drop=FALSE]
   y_train = y_train[sampind]
-  
+
 
   #decay_rate = 0.5 / nrow(X_train)
   decay_rate=0
-  
+
   deep_model <- keras_model_sequential() %>%
     layer_dense(units = 128, activation = 'relu', input_shape = c(ncol(X_train))) %>%
     layer_dense(units = 128, activation = 'relu', input_shape = c(ncol(X_train))) %>%
@@ -115,7 +115,7 @@ deepnet_ar_model <- function(X_train, y_train, X_val, y_val, epochs=350, batch=1
       optimizer =  optimizer_adam(lr = 0.001, decay = decay_rate), #optimizer_adam(lr = 0.001, decay = decay_rate), #optimizer_sgd(lr = 0.00001*5, momentum = 0.0, nesterov = FALSE, decay = 0.05/nrow(X_train)),
       metrics = 'mean_absolute_error'#c('mean_absolute_error')
     )
-  
+
   deep_model %>% fit(X_train, y_train, batch_size = batch, epochs = epochs,
                      #validation_split = 0.15,
                      validation_data = list(X_val, y_val),
@@ -129,10 +129,10 @@ deepnet_ar_model <- function(X_train, y_train, X_val, y_val, epochs=350, batch=1
 }
 
 
-library(xgboost)
+#library(xgboost)
 xgb_ar_model <- function(X_train, y_train, X_val, y_val, weights=NULL) {
-  
-  
+
+
   X_train <- array_reshape(X_train, dim = c(nrow(X_train), ncol(X_train)) )
   y_train <- array(y_train, dim = c(nrow(y_train), ncol(y_train)) )
 
@@ -151,7 +151,7 @@ xgb_ar_model <- function(X_train, y_train, X_val, y_val, weights=NULL) {
   dtrain <- xgb.DMatrix(X_train, label = y_train)
   dtest <- xgb.DMatrix(X_val, label = y_val)
   watchlist <- list(train=dtrain, eval = dtest)
-  
+
   xgb_model = xgb.train(params=list(booster="gbtree", objective="reg:linear",
                                     eta = 0.03,
                                     max_depth=16,
@@ -162,10 +162,10 @@ xgb_ar_model <- function(X_train, y_train, X_val, y_val, weights=NULL) {
                         nrounds=1000,
                         watchlist=watchlist,
                         early_stopping_rounds = 20)
-  
+
   xgb_model$lag = ncol(X_train)
   xgb_model
-  
+
 }
 
 
@@ -175,8 +175,8 @@ xgb_ar_model <- function(X_train, y_train, X_val, y_val, weights=NULL) {
 create_val_global_set <- function(series_list) {
   x_val = do.call(rbind, lapply(series_list, function(ll) rev(tail(ll$x, lag))  ))
   y_val = do.call(rbind, lapply(series_list, function(ll) ll$xx[1]))
-  # 
-  # 
+  #
+  #
   # for (hh in 2) {
   #   x_val_h = do.call(rbind, lapply(series_list,
   #                                   function(ll) rev(tail(c(ll$x, ll$xx[1:(hh-1)]), lag))  ))
@@ -184,6 +184,6 @@ create_val_global_set <- function(series_list) {
   #   x_val = rbind(x_val, x_val_h)
   #   y_val = rbind(y_val, y_val_h)
   # }
-  # 
+  #
   list(X_val = x_val, y_val = y_val)
 }

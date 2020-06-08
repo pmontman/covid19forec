@@ -15,7 +15,7 @@ library(downloader)
 
 get_data_spain <- function() {
   sp_csv = read_csv("https://covid19.isciii.es/resources/serie_historica_acumulados.csv")
-  sp_csv = head(sp_csv, -4)
+  sp_csv = head(sp_csv, -39)
   stopifnot( !anyNA(tail(sp_csv)))
   sp_csv <- sp_csv %>% transmute(region = `CCAA`,
                                  date = FECHA,
@@ -94,6 +94,7 @@ get_data_usa <- function() {
 ###############################################################################
 
 get_data_other <- function() {
+
   other_csv <- read_csv("https://github.com/CSSEGISandData/COVID-19/raw/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv")
   other_csv = other_csv %>% select(-(3:4)) %>%
     mutate(region=paste(`Province/State`, `Country/Region`)) %>% select(-(1:2))
@@ -105,6 +106,7 @@ get_data_other <- function() {
 }
 
 acquire_covid_data <- function() {
+  stop("acquire_covid_data function is deprecated due to data sources changing format")
  today <- lubridate::today()
 
   sp_csv = get_data_spain()
@@ -129,7 +131,6 @@ acquire_covid_data <- function() {
   bind_rows(sp_csv, ita_csv, uk_csv,
             usa_csv, other_csv)
 }
-
 
 
 #plot the list of cases for debuggin purposes

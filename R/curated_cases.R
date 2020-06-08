@@ -41,7 +41,8 @@ curated_cases_list = function(covid_global, MIN_MAX_NUM_CASES=500, TRAILING_MIN_
     group_map( function(tbl, y) {
       tbl = tbl %>% arrange(date)
       list(x=tbl$cases,
-           id=y$region)
+           id=y$region,
+           lastdate=tail(tbl$date,1))
     }
     )
 
@@ -85,14 +86,15 @@ prepare_forecasts <- function(series_list, horiz=4, epidem_window_days=5, FINAL_
     ets_forec = forecast::forecast( forecast::ets(ll$x), h=horiz)$mean
     theta_forec = forecast::thetaf(ll$x,horiz)$mean
 
-    last7 = log(tail(ll$x, epidem_window_days))
-    days = 1:epidem_window_days
-    modelm = lm(last7~days)
-    predays = (epidem_window_days+1):(epidem_window_days+horiz)
-    predays = cbind(1, predays)
-    epide_ff = as.vector(exp(predays %*% modelm$coefficients))
+    # epidemiological not ready for differenced data
+    # last7 = log(tail(ll$x, epidem_window_days))
+    # days = 1:epidem_window_days
+    # modelm = lm(last7~days)
+    # predays = (epidem_window_days+1):(epidem_window_days+horiz)
+    # predays = cbind(1, predays)
+    # epide_ff = as.vector(exp(predays %*% modelm$coefficients))
 
-    ll$ff = rbind(ll$ff, arima_forec, ets_forec, theta_forec, epide_ff)
+    ll$ff = rbind(ll$ff, arima_forec, ets_forec, theta_forec)#, epide_ff)
     ll
   })
 
