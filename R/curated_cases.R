@@ -81,6 +81,7 @@ prepare_forecasts <- function(series_list, horiz=4, epidem_window_days=5, FINAL_
   series_list = Filter( function(ll) length(ll$x) > FINAL_MIN_LENGTH, series_list)
 
   #add forecasts of the baseline models
+  if (1) {
   series_list = lapply(series_list, function (ll) {
     arima_forec =  forecast::forecast( forecast::auto.arima(ll$x), h=horiz)$mean
     ets_forec = forecast::forecast( forecast::ets(ll$x), h=horiz)$mean
@@ -96,7 +97,7 @@ prepare_forecasts <- function(series_list, horiz=4, epidem_window_days=5, FINAL_
 
     ll$ff = rbind(ll$ff, arima_forec, ets_forec, theta_forec)#, epide_ff)
     ll
-  })
+  })}
 
   series_list
 }

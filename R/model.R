@@ -190,9 +190,9 @@ analyze_glob_model = function(my_series, fit_model_fun, model_name="custom_AR", 
 
   if (do_log_transform) {
     series_list = lapply(series_list, function(ll) {
-      ll$x = log(ll$x+1)
-      ll$xx = log(ll$xx+1)
-      ll$ff = log(ll$ff+1)
+      ll$x = log(ll$x+ 0.5)
+      ll$xx = log(ll$xx+ 0.5)
+      ll$ff = log(ll$ff+ 0.5)
       ll
     })
   }
@@ -313,9 +313,9 @@ analyze_glob_model = function(my_series, fit_model_fun, model_name="custom_AR", 
 
   if (do_log_transform) {
     series_list = lapply(series_list, function(ll) {
-      ll$x = exp(ll$x)-1
-      ll$xx = exp(ll$xx)-1
-      ll$ff = exp(ll$ff) - 1
+      ll$x = exp(ll$x)- 0.5
+      ll$xx = exp(ll$xx)-0.5
+      ll$ff = exp(ll$ff) - 0.5
       ll
     })
     series_list = add_mase_scal(series_list)
