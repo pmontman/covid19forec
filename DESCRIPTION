@@ -12,4 +12,12 @@ LazyData: true
 Suggests: 
     knitr,
     rmarkdown
+Imports:
+    dplyr,
+    tidyr,
+    readr,
+    lubridate,
+    downloader,
+    RcppArmadillo,
+    keras
 VignetteBuilder: knitr
